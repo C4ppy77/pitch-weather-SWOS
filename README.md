@@ -54,7 +54,7 @@ Pitch types: 0 frozen, 1 muddy, 2 wet, 3 soft; anything else draws nothing. Or s
    auto weather = PitchWeather::forPitchType(pitchType, gameMinute, s_weatherSeed);
    PitchWeather::draw(renderer, gameViewport, weather, SDL_GetTicks64() / 1000.0);
    ```
-   - `pitchType`: the match's pitch type (0 frozen, 1 muddy, 2 wet, 3 soft, 4 normal, 5 hard, 6 dry). In swos-port
+   - `pitchType`: the match's pitch type (0 frozen, 1 muddy, 2 wet, 3 soft, 4 normal, 5 dry, 6 hard). In swos-port
      that's what `getPitchType()` returns.
    - `gameMinute`: the match clock in minutes, so the weather follows the match, not real time.
    - `gameViewport`: the rectangle the game is drawn in (the whole window if you don't letterbox).
