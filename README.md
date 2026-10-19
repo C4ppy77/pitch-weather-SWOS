@@ -40,6 +40,33 @@ PitchWeather::draw(renderer, { 0, 0, screenWidth, screenHeight }, weather, SDL_G
 Pitch types: 0 frozen, 1 muddy, 2 wet, 3 soft; anything else draws nothing. Or skip `forPitchType` and pass your own
 `PitchWeather::Weather{ PitchWeather::Kind::Rain, 0.8f }`. To let players turn it off, just don't call `draw`.
 
+## Adding it to a SWOS port (swos-port and similar)
+
+1. Copy `src/pitchWeather.cpp` and `src/pitchWeather.h` into your source tree and add the `.cpp` to your build
+   (CMake, Meson, Visual Studio project, whatever you use).
+2. At kick-off, pick a seed so each match gets its own pattern:
+   ```cpp
+   static int s_weatherSeed;
+   s_weatherSeed = SDL_GetPerformanceCounter() % 360;
+   ```
+3. In the game loop, after the pitch, players and HUD are drawn and **before** `SDL_RenderPresent`, add:
+   ```cpp
+   auto weather = PitchWeather::forPitchType(pitchType, gameMinute, s_weatherSeed);
+   PitchWeather::draw(renderer, gameViewport, weather, SDL_GetTicks64() / 1000.0);
+   ```
+   - `pitchType`: the match's pitch type (0 frozen, 1 muddy, 2 wet, 3 soft, 4 normal, 5 hard, 6 dry). In swos-port
+     that's what `getPitchType()` returns.
+   - `gameMinute`: the match clock in minutes, so the weather follows the match, not real time.
+   - `gameViewport`: the rectangle the game is drawn in (the whole window if you don't letterbox).
+4. Optional but recommended:
+   - Skip the call on the half-time and full-time result screens, so the rain doesn't fall over them.
+   - Skip it when your game draws a frame that isn't shown (e.g. catch-up frames), so it only costs one draw per
+     displayed frame.
+   - Add an on/off option for players: when it's off, just don't call `draw`.
+
+It's purely visual: the ball still plays exactly as the pitch type says, and nothing in the game's own logic or
+random numbers is touched.
+
 ## Demo
 
 ```sh
