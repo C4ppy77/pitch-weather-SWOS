@@ -49,7 +49,7 @@ cmake --build build --config Release
 ```
 
 Keys: `1` drizzle, `2` rain, `3` heavy rain, `4` snow, `0` none, `Up`/`Down` intensity, `M` match mode (a 90 minute
-match in 90 seconds), `Esc` quit.
+match in 90 seconds), `Esc` quit. Start in another weather with `pitch_weather_demo snow` (or `drizzle`, `rain`, `heavy`).
 
 Needs SDL2: `brew install sdl2` on macOS, `apt install libsdl2-dev` on Debian/Ubuntu, or on Windows the SDL2
 development package from [libsdl.org](https://github.com/libsdl-org/SDL/releases) (point CMake at it with

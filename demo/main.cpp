@@ -2,10 +2,11 @@
 // Copyright (c) 2026 C4ppy77. MIT licence, see LICENSE.
 //
 // Keys: 1 drizzle, 2 rain, 3 heavy rain, 4 snow, 0 none, Up/Down intensity, M match mode (the intensity drifts as
-// over a 90 minute match, played in 90 seconds), Esc quit.
+// over a 90 minute match, played in 90 seconds), Esc quit. Start with another kind: pitch_weather_demo drizzle|rain|heavy|snow
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 #include <cstdio>
+#include <initializer_list>
 #include "pitchWeather.h"
 
 using namespace PitchWeather;
@@ -39,7 +40,7 @@ static const char *kindName(Kind kind)
     }
 }
 
-int main(int, char **)
+int main(int argc, char **argv)
 {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         std::fprintf(stderr, "SDL_Init failed: %s\n", SDL_GetError());
@@ -55,6 +56,11 @@ int main(int, char **)
     }
 
     Weather weather{ Kind::Rain, 0.8f };
+    if (argc > 1) {
+        for (auto kind : { Kind::Drizzle, Kind::Rain, Kind::HeavyRain, Kind::Snow })
+            if (SDL_strncasecmp(argv[1], kindName(kind), SDL_strlen(argv[1])) == 0)
+                weather.kind = kind;
+    }
     bool matchMode = false;
     Uint64 matchStart = 0;
     int seed = static_cast<int>(SDL_GetPerformanceCounter() % 360);
