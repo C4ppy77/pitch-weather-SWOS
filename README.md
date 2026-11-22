@@ -14,6 +14,9 @@ macOS, Linux, iOS, Android.
 - **What falls:** each pitch type maps to a kind of weather (drizzle, rain, heavy rain, snow).
 - **How much:** the intensity drifts over the 90 minutes in two slow sine waves, starting at a random point each
   match, so no two matches look the same.
+- **What kind of snow:** the same seed also sets each snowy match's character: which way and how hard the wind
+  blows, how gusty it is, how big the flakes are, how fast they fall and how thick they come down. One match is a
+  light flurry drifting left, the next big flakes driven right, all without any setup.
 - **Drawing:** every drop is a thin slanted streak fading towards its tail, every snowflake a soft disc in one of
   three depths (faint far specks, a main layer and a few big flakes near the camera) blown about by a gusting wind,
   plus a faint dark (rain) or white (snow) tint. Everything goes to the GPU in a single `SDL_RenderGeometry` call,
@@ -39,7 +42,7 @@ PitchWeather::draw(renderer, { 0, 0, screenWidth, screenHeight }, weather, SDL_G
 ```
 
 Pitch types: 0 frozen, 1 muddy, 2 wet, 3 soft; anything else draws nothing. Or skip `forPitchType` and pass your own
-`PitchWeather::Weather{ PitchWeather::Kind::Rain, 0.8f }`. To let players turn it off, just don't call `draw`.
+`PitchWeather::Weather{ PitchWeather::Kind::Snow, 0.8f, seed }`. To let players turn it off, just don't call `draw`.
 
 ## Adding it to a SWOS port (swos-port and similar)
 
@@ -77,7 +80,8 @@ cmake --build build --config Release
 ```
 
 Keys: `1` drizzle, `2` rain, `3` heavy rain, `4` snow, `0` none, `Up`/`Down` intensity, `M` match mode (a 90 minute
-match in 90 seconds), `Esc` quit. Start in another weather with `pitch_weather_demo snow` (or `drizzle`, `rain`, `heavy`).
+match in 90 seconds), `N` new match (a different kind of snow), `Esc` quit. Start in another weather with
+`pitch_weather_demo snow` (or `drizzle`, `rain`, `heavy`).
 
 Needs SDL2: `brew install sdl2` on macOS, `apt install libsdl2-dev` on Debian/Ubuntu, or on Windows the SDL2
 development package from [libsdl.org](https://github.com/libsdl-org/SDL/releases) (point CMake at it with

@@ -2,8 +2,9 @@
 // Copyright (c) 2026 C4ppy77. MIT licence, see LICENSE.
 //
 // Every drop is a thin slanted quad fading towards its tail, every snowflake a soft disc in one of three depth layers
-// blown by a gusting wind, and they all go to the GPU in one SDL_RenderGeometry call. A drop's position comes from a
-// fixed pseudo-random start plus the clock, so nothing is stored or updated per drop.
+// blown by a gusting wind (its strength and direction, the flake size and how thick it falls change from match to
+// match), and they all go to the GPU in one SDL_RenderGeometry call. A drop's position comes from a fixed
+// pseudo-random start plus the clock, so nothing is stored or updated per drop.
 #include "pitchWeather.h"
 #include <algorithm>
 #include <cmath>
@@ -27,6 +28,7 @@ static constexpr float kReferenceScreenHeight = 390;
 Weather forPitchType(int pitchType, float minute, int seed)
 {
     Weather weather;
+    weather.seed = seed;
     float low, high;
     switch (pitchType) {
     case 0: weather.kind = Kind::Snow; low = 0.55f; high = 1; break;
@@ -81,12 +83,41 @@ struct SnowLayer
     float wind;             // how much the gusts move it
 };
 
-static constexpr float kSnowFlakes = 280;          // on screen at once at full intensity
+static constexpr float kSnowFlakes = 340;          // on screen at once at full intensity, for an average match
 static constexpr SnowLayer kSnowLayers[] = {
-    { 0.55f, 0.9f, 0.5f, 0.045f, 0.02f, 0.35f, 0.2f, 0.5f, 4, 0.45f },   // far
-    { 0.35f, 1.8f, 0.8f, 0.08f, 0.03f, 0.6f, 0.25f, 0.45f, 7, 0.8f },    // middle
-    { 0.10f, 3.6f, 1.6f, 0.15f, 0.06f, 0.45f, 0.2f, 0.25f, 12, 1.4f },   // near, big and soft
+    { 0.50f, 1.0f, 0.6f, 0.045f, 0.02f, 0.45f, 0.2f, 0.5f, 4, 0.45f },   // far
+    { 0.38f, 2.0f, 1.0f, 0.08f, 0.03f, 0.7f, 0.25f, 0.45f, 7, 0.8f },    // middle
+    { 0.12f, 4.0f, 2.0f, 0.15f, 0.06f, 0.55f, 0.25f, 0.3f, 12, 1.4f },   // near, big and soft
 };
+
+// What makes one match's snow different from the next, picked from its seed: from a light flurry drifting one way
+// to thick flakes driven hard the other.
+struct SnowCharacter
+{
+    float density;          // times kSnowFlakes
+    float size;             // times every flake's radius
+    float fall;             // times every flake's speed
+    float windDir;          // -1 blows left, 1 right
+    float windStrength;     // steady drift
+    float gustiness;        // how much the wind comes and goes
+    float gustPhase;
+    int layout;             // shifts where every flake starts
+};
+
+static SnowCharacter snowCharacter(int seed)
+{
+    // the seed goes in as the "drop" number, so each salt is one independent roll for the match
+    SnowCharacter character;
+    character.density = 0.7f + 0.8f * random(seed, 20);
+    character.size = 0.85f + 0.55f * random(seed, 21);
+    character.fall = 0.8f + 0.45f * random(seed, 22);
+    character.windDir = random(seed, 23) < 0.5f ? -1.0f : 1.0f;
+    character.windStrength = 0.2f + 1.8f * random(seed, 24) * random(seed, 25);    // mostly gentle, sometimes strong
+    character.gustiness = 0.4f + 1.2f * random(seed, 26);
+    character.gustPhase = random(seed, 27) * 6.2832f;
+    character.layout = seed * 997;
+    return character;
+}
 
 static const SnowLayer& snowLayerFor(float pick)
 {
@@ -171,16 +202,21 @@ void draw(SDL_Renderer *renderer, const SDL_Rect& area, const Weather& weather, 
 
     if (weather.kind == Kind::Snow) {
         // A shared wind that gusts: its displacement is a steady drift plus two slow waves, so the whole snowfall
-        // speeds up, eases off and sometimes swirls back a little. Nearer layers get pushed further.
-        double gust = seconds * 14 + 38 * std::sin(seconds * 0.21) + 17 * std::sin(seconds * 0.57 + 1.3);
+        // speeds up, eases off and sometimes swirls back a little. Nearer layers get pushed further. How hard and which
+        // way it blows, and how big and thick the flakes are, change from match to match.
+        auto character = snowCharacter(weather.seed);
+        double waves = 38 * std::sin(seconds * 0.21 + character.gustPhase)
+            + 17 * std::sin(seconds * 0.57 + 2 * character.gustPhase);
+        double gust = character.windDir * (seconds * 14 * character.windStrength + character.gustiness * waves);
 
-        int count = static_cast<int>(kSnowFlakes * weather.intensity);
-        for (int i = 0; i < count; i++) {
+        int count = static_cast<int>(kSnowFlakes * character.density * weather.intensity);
+        for (int flake = 0; flake < count; flake++) {
+            int i = flake + character.layout;
             const auto& layer = snowLayerFor(random(i, 8));
-            float radius = (layer.radius + layer.radiusSpread * random(i, 5)) * unit;
+            float radius = (layer.radius + layer.radiusSpread * random(i, 5)) * character.size * unit;
             float margin = radius * 2;
 
-            double speed = height * (layer.speed + layer.speedSpread * random(i, 3));
+            double speed = height * (layer.speed + layer.speedSpread * random(i, 3)) * character.fall;
             float y = static_cast<float>(wrap(random(i, 1) * height + seconds * speed, height + 2 * margin)) - margin;
 
             // each flake flutters on its own, on top of the wind

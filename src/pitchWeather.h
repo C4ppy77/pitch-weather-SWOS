@@ -12,11 +12,12 @@ struct Weather
 {
     Kind kind = Kind::None;
     float intensity = 0;    // 0..1, how much is falling right now
+    int seed = 0;           // 0..359, gives each match its own snow: wind, flake size, how thick it falls
 };
 
 // The weather for a SWOS-style pitch type: 0 frozen (snow), 1 muddy (heavy rain), 2 wet (rain), 3 soft (drizzle),
 // anything else none. Its intensity drifts over the match in two slow waves, in steps of 0.1; seed (0..359) gives each
-// match its own pattern, minute is the match minute (0..90).
+// match its own pattern (and its own kind of snow), minute is the match minute (0..90).
 Weather forPitchType(int pitchType, float minute, int seed);
 
 // Draws the weather over area (usually the whole game screen), with a slight tint for the gloom or the cold. Call it

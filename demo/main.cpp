@@ -2,7 +2,8 @@
 // Copyright (c) 2026 C4ppy77. MIT licence, see LICENSE.
 //
 // Keys: 1 drizzle, 2 rain, 3 heavy rain, 4 snow, 0 none, Up/Down intensity, M match mode (the intensity drifts as
-// over a 90 minute match, played in 90 seconds), Esc quit. Start with another kind: pitch_weather_demo drizzle|rain|heavy|snow
+// over a 90 minute match, played in 90 seconds), N new match (a different snow: wind, flake size, how thick it falls),
+// Esc quit. Start with another kind: pitch_weather_demo drizzle|rain|heavy|snow
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 #include <cstdio>
@@ -81,6 +82,7 @@ int main(int argc, char **argv)
                 case SDLK_UP: weather.intensity = SDL_min(1.0f, weather.intensity + 0.1f); break;
                 case SDLK_DOWN: weather.intensity = SDL_max(0.0f, weather.intensity - 0.1f); break;
                 case SDLK_m: matchMode = !matchMode; matchStart = SDL_GetTicks64(); break;
+                case SDLK_n: seed = (seed + 1 + static_cast<int>(SDL_GetPerformanceCounter() % 358)) % 360; break;
                 }
             }
         }
@@ -90,6 +92,7 @@ int main(int argc, char **argv)
         double seconds = SDL_GetTicks64() / 1000.0;
 
         auto shown = weather;
+        shown.seed = seed;
         if (matchMode) {
             // pitch types as forPitchType takes them
             int pitchType = weather.kind == Kind::Snow ? 0 : weather.kind == Kind::HeavyRain ? 1 :
@@ -99,8 +102,8 @@ int main(int argc, char **argv)
         }
 
         char title[128];
-        std::snprintf(title, sizeof(title), "pitch-weather - %s, intensity %.1f%s", kindName(shown.kind),
-            shown.intensity, matchMode ? " (match mode)" : "");
+        std::snprintf(title, sizeof(title), "pitch-weather - %s, intensity %.1f, match %d%s", kindName(shown.kind),
+            shown.intensity, seed, matchMode ? " (match mode)" : "");
         SDL_SetWindowTitle(window, title);
 
         drawPitch(renderer, width, height);
