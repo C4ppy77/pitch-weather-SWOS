@@ -14,7 +14,8 @@ macOS, Linux, iOS, Android.
 - **What falls:** each pitch type maps to a kind of weather (drizzle, rain, heavy rain, snow).
 - **How much:** the intensity drifts over the 90 minutes in two slow sine waves, starting at a random point each
   match, so no two matches look the same.
-- **Drawing:** every drop is a thin slanted streak fading towards its tail, every snowflake a tiny swaying diamond,
+- **Drawing:** every drop is a thin slanted streak fading towards its tail, every snowflake a soft disc in one of
+  three depths (faint far specks, a main layer and a few big flakes near the camera) blown about by a gusting wind,
   plus a faint dark (rain) or white (snow) tint. Everything goes to the GPU in a single `SDL_RenderGeometry` call,
   drawn straight into the game's own frame. (Drawing it as a separate full-screen layer on top cost an iPhone 13
   about a third of its frames.)
